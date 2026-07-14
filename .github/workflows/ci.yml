@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    name: 言序 · ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      YANXU_INSTALL_DIR: ${{ runner.temp }}/yanxu/bin
+      YANXU_GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: 安装言序
+        shell: sh
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/yanxulang/yanxu/main/scripts/install.sh -o "$RUNNER_TEMP/yanxu-install.sh"
+          sh "$RUNNER_TEMP/yanxu-install.sh"
+      - name: 静态检查与规格测试
+        shell: sh
+        run: |
+          yanxu="$YANXU_INSTALL_DIR/yanxu"
+          "$yanxu" --version
+          "$yanxu" 包 .
+          "$yanxu" 查 src/言据.yx
+          for file in tests/*.yx examples/*.yx; do "$yanxu" 查 "$file"; done
+          "$yanxu" 试 tests
+          "$yanxu" 包 锁 examples/包调用
+          "$yanxu" 包 运行 examples/包调用
+      - name: 字节码 VM 对照
+        shell: sh
+        run: |
+          yanxu="$YANXU_INSTALL_DIR/yanxu"
+          for file in tests/*.yx; do "$yanxu" 字节 "$file"; done
+          "$yanxu" examples/生成数据.yx > "$RUNNER_TEMP/tree.txt"
+          "$yanxu" 字节 examples/生成数据.yx > "$RUNNER_TEMP/vm.txt"
+          diff -u "$RUNNER_TEMP/tree.txt" "$RUNNER_TEMP/vm.txt"
+
+  windows:
+    name: 言序 · windows-latest
+    runs-on: windows-latest
+    env:
+      YANXU_INSTALL_DIR: ${{ runner.temp }}\yanxu\bin
+      YANXU_GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: 安装言序
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:RUNNER_TEMP "yanxu-install.ps1"
+          Invoke-WebRequest https://raw.githubusercontent.com/yanxulang/yanxu/main/scripts/install.ps1 -OutFile $script
+          & $script
+      - name: 静态检查与规格测试
+        shell: pwsh
+        run: |
+          $yanxu = Join-Path $env:YANXU_INSTALL_DIR "yanxu.exe"
+          & $yanxu --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $yanxu 包 .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $yanxu 查 "src/言据.yx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem tests, examples -Filter *.yx | ForEach-Object {
+            & $yanxu 查 $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          & $yanxu 试 tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $yanxu 包 锁 "examples/包调用"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $yanxu 包 运行 "examples/包调用"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: 字节码 VM 对照
+        shell: pwsh
+        run: |
+          $yanxu = Join-Path $env:YANXU_INSTALL_DIR "yanxu.exe"
+          Get-ChildItem tests -Filter *.yx | ForEach-Object {
+            & $yanxu 字节 $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
