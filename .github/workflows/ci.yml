@@ -32,8 +32,9 @@ jobs:
           yanxu="$YANXU_INSTALL_DIR/yanxu"
           "$yanxu" --version
           "$yanxu" 包 .
-          "$yanxu" 查 src/言据.yx
+          for file in src/*.yx; do "$yanxu" 查 "$file"; done
           for file in tests/*.yx examples/*.yx; do "$yanxu" 查 "$file"; done
+          for file in benchmarks/*.yx; do "$yanxu" 查 "$file"; done
           "$yanxu" 试 tests
           "$yanxu" 包 锁 examples/包调用
           "$yanxu" 包 运行 examples/包调用
@@ -68,9 +69,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $yanxu 包 .
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & $yanxu 查 "src/言据.yx"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-ChildItem tests, examples -Filter *.yx | ForEach-Object {
+          Get-ChildItem src, tests, examples, benchmarks -Filter *.yx | ForEach-Object {
             & $yanxu 查 $_.FullName
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
