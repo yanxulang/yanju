@@ -35,14 +35,14 @@
 
 ## 引入项目
 
-需要言序 1.0 或更高版本。在应用的 `言序.toml` 中声明 Git 依赖：
+需要言序 1.1.5 或更高版本。在应用的 `言序.toml` 格式 2 中声明 Git 依赖：
 
 ```toml
 [依赖]
-言据 = { git = "https://github.com/yanxulang/yanju.git", 修订 = "v1.1.0", 版 = "^1.1" }
+言据 = { git = "https://github.com/yanxulang/yanju.git", 修订 = "main", 版 = "^1.1" }
 ```
 
-然后从包入口导入：
+然后从包的显式`默认`导出导入：
 
 ```yanxu
 引「包:言据」为 言据；
