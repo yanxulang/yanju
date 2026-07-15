@@ -4,16 +4,16 @@ target = "aarch64-apple-darwin"
 generator = "1.1.6"
 
 [root_dependencies]
-"言据" = "言据@1.1.2#e526f172db95-7276464b604e7fe7"
+"言据" = "言据@1.1.2#e526f172db95-0865c73a9c8857cf"
 
 [root_dev_dependencies]
 
 [[package]]
-id = "言据@1.1.2#e526f172db95-7276464b604e7fe7"
+id = "言据@1.1.2#e526f172db95-0865c73a9c8857cf"
 name = "言据"
 version = "1.1.2"
 source = "path:../.."
-checksum = "7276464b604e7fe7c3ea76a3243e9a928f4feb8846647a484e71c2df12bef532"
+checksum = "0865c73a9c8857cf83db19a8b0ab7aee3659c7580bd855ccdefe4529d97c73f4"
 entry = "src/言据.yx"
 target = "aarch64-apple-darwin"
 minimum_yanxu = ">=1.1.6"
