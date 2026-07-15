@@ -22,8 +22,8 @@ jobs:
         with:
           repository: YanXuLang/yanxu
           path: .yanxu
-          ref: b7dadc9e684d835cbdf2ba1a4428ed891d7dc0b0 # yanxu 1.1.5 acceptance fix
-      - name: 构建言序 1.1.5
+          ref: v1.1.6
+      - name: 构建言序 1.1.6
         run: cargo build --manifest-path .yanxu/Cargo.toml --locked --bin yanxu
       - name: 静态检查与规格测试
         shell: sh
@@ -56,8 +56,8 @@ jobs:
         with:
           repository: YanXuLang/yanxu
           path: .yanxu
-          ref: b7dadc9e684d835cbdf2ba1a4428ed891d7dc0b0 # yanxu 1.1.5 acceptance fix
-      - name: 构建言序 1.1.5
+          ref: v1.1.6
+      - name: 构建言序 1.1.6
         run: cargo build --manifest-path .yanxu/Cargo.toml --locked --bin yanxu
       - name: 静态检查与规格测试
         shell: pwsh
