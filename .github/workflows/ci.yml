@@ -9,6 +9,93 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    name: 稳定版质量门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: YanXuLang/yanxu
+          path: .yanxu-current
+          ref: v1.1.8
+      - name: 构建当前稳定言序
+        run: cargo build --manifest-path .yanxu-current/Cargo.toml --locked --bin yanxu
+      - name: 清单、权限与文档结构
+        shell: sh
+        run: |
+          set -eu
+          yanxu="$GITHUB_WORKSPACE/.yanxu-current/target/debug/yanxu"
+          "$yanxu" 包 .
+          test -f README.md
+          test -f LICENSE
+          test -f CHANGELOG.md
+          test -f COMPATIBILITY.md
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
+          test -f docs/API.md
+          test -f docs/GUIDE.md
+          test -d examples
+          test -d tests
+          grep -F '网络 = []' 言序.toml
+          grep -F 'TCP监听 = []' 言序.toml
+          grep -F 'UDP绑定 = []' 言序.toml
+          grep -F '进程 = false' 言序.toml
+          grep -F '原生扩展 = false' 言序.toml
+      - name: 格式、静态检查与 API 漂移
+        shell: sh
+        run: |
+          set -eu
+          yanxu="$GITHUB_WORKSPACE/.yanxu-current/target/debug/yanxu"
+          find src tests examples benchmarks -type f -name '*.yx' -print | while IFS= read -r file; do
+            "$yanxu" 格 "$file" | cmp - "$file"
+            "$yanxu" 查 "$file"
+          done
+          "$yanxu" 文 src/言据.yx "$RUNNER_TEMP/API.md"
+          cmp docs/API.md "$RUNNER_TEMP/API.md"
+      - name: 规格、示例、锁图与发布构建
+        shell: sh
+        run: |
+          set -eu
+          yanxu="$GITHUB_WORKSPACE/.yanxu-current/target/debug/yanxu"
+          "$yanxu" 试 tests --json
+          for file in tests/*.yx; do "$yanxu" 字节 "$file"; done
+          "$yanxu" 字节 examples/生成数据.yx
+          "$yanxu" 字节 examples/读取配置.yx
+          "$yanxu" 包 锁 examples/包调用
+          "$yanxu" 包 运行 examples/包调用
+          "$yanxu" 编 . -o "$RUNNER_TEMP/yanju-release.yxb" --release
+          test -s "$RUNNER_TEMP/yanju-release.yxb"
+
+  metadata:
+    name: 新增元数据门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - name: 检查分支、PR 与新增提交
+        shell: sh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+          PR_TITLE: ${{ github.event.pull_request.title || '' }}
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: |
+          set -eu
+          if printf '%s\n%s\n%s\n' "$HEAD_BRANCH" "$PR_TITLE" "$PR_BODY" | grep -Eiq 'co[d]ex'; then
+            echo '分支或 PR 元数据包含禁用词'
+            exit 1
+          fi
+          if test -n "$BASE_SHA" && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            if git log "$BASE_SHA"..HEAD --format='%H%n%an%n%ae%n%cn%n%ce%n%s%n%b' | grep -Eiq 'co[d]ex'; then
+              echo '新增提交元数据包含禁用词'
+              exit 1
+            fi
+          fi
+
   unix:
     name: 言序 · ${{ matrix.os }}
     strategy:
