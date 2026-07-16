@@ -64,7 +64,8 @@ jobs:
           for file in tests/*.yx; do "$yanxu" 字节 "$file"; done
           "$yanxu" 字节 examples/生成数据.yx
           "$yanxu" 字节 examples/读取配置.yx
-          "$yanxu" 包 锁 examples/包调用
+          # 锁文件包含目标三元组，先在当前 CI 目标上重建再验证运行。
+          "$yanxu" 包 更新 examples/包调用
           "$yanxu" 包 运行 examples/包调用
           "$yanxu" 编 . -o "$RUNNER_TEMP/yanju-release.yxb" --release
           test -s "$RUNNER_TEMP/yanju-release.yxb"
